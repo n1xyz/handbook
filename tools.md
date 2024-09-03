@@ -184,10 +184,10 @@ written in Solidity. In terms of tooling, we use:
 
 - [`foundry`](https://book.getfoundry.sh/) suite for most things,
   including
-  - [`forge`] for compiling, testing, deploying, formatting.
-  - [`anvil`] as the local development chain.
-  - [`cast`] for interacting with local and remote chains.
-  - [`chisel`] for inspecting chain state and as a nice debugger and repl.
+  - `forge` for compiling, testing, deploying, formatting.
+  - `anvil` as the local development chain.
+  - `cast` for interacting with local and remote chains.
+  - `chisel` for inspecting chain state and as a nice debugger and repl.
 
 For scripting anything involving Ethereum, [`forge
 script`](https://book.getfoundry.sh/tutorials/solidity-scripting) should
