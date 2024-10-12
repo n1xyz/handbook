@@ -32,9 +32,9 @@ Code should be written from the perspective of the reader. Ask yourself
 
 There are many tricks that help with this. Some examples:
 
+- Keep semantically similar code close, i.e. locality of behaviour.
 - Make heavy use of "obvious" assertions to document tacit assumptions.
 - Prefer fully qualified imports except when obviously redundant.
-- Keep semantically similar code close, i.e. locality of behaviour.
 - Prefer too little abstraction over too much.
 - Prefer abstracting too late rather too early, as requirements are better known.
 - Keep abstractions hermetic so users aren't exposed to implementation details.
@@ -45,7 +45,7 @@ Some examples follow.
 - [Locality of Behaviour (LoB)](https://htmx.org/essays/locality-of-behaviour/)
 - [Joel Spolsky on "Things you should never do, part 1"](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/)
 
-### Example: Localising imports
+### Example: Localising behaviour
 
 These are both contrived examples, but illustrate the principles.
 Consider the prototypical `clap` example:
@@ -90,17 +90,49 @@ pub fn sha256(data: &[u8]) -> [u8; 32] {
 }
 ```
 
+An example in another language, here Nix, would be to avoid
+
+```nix
+pkgs.writeShellApplication {
+  name = "my-command";
+  runtimeInputs = [ ];
+  text = builtins.readFile ./my-command.sh;
+};
+```
+
+and instead use
+
+```nix
+pkgs.writeShellApplication {
+  name = "my-command";
+  runtimeInputs = [ ];
+  text = ''
+    # ... contents ...
+  '';
+};
+```
+
+This is so the reader has full context, the behaviour is localised, and
+there's no chance of someone else accidentally invoking the script
+directly. There are of course exceptions, use your judgement.
+
 ## Only Crash-only
 
 Since we write long-running, mission-critical infrastructure code, we
 design all our software to be _crash-only_. Instead of a startup and
-shutdown procedures, we only have the recovery procedure as the
-entrypoint, along with crashes as shutdown. Thus, even in the default
-case, software should be able to tolerate a crash and continue running.
+shutdown procedures, we have the **recovery procedure** as the
+entrypoint, along with **crashes as shutdown**. Thus, even in the
+default case, software should be able to tolerate a crash at any point
+in the execution and continue running.
+
 This pairs well with emphasis on simplicity and correctness, as well as
 asserting liberally, as crash/recovery requires less code, and thanks to
 crash-tolerance we are freely able to panic on invariant violations.
 This means never handling SIGTERM or SIGINT.
+
+This approach requires explicit and thoughtful design around the crash
+consistency guarantees at each point in the execution, as well as being
+thorough in the recovery procedure.
 
 - [Crash-Only Software](https://www.usenix.org/legacy/events/hotos03/tech/full_papers/candea/candea.pdf)
 - [Let it Crash](https://wiki.c2.com/?LetItCrash=)
@@ -124,13 +156,33 @@ backtrace. `RUST_LIB_BACKTRACE=1` should _always_ be set so that
 backtraces are captured when using `anyhow` or `eyre`. For a more
 complete coverage, see the latter two articles.
 
-- [Modular Errors in Rust](https://sabrinajewson.org/blog/errors)
-- [Error Handling in Rust](https://www.lpalmieri.com/posts/error-handling-rust/#summary)
-- [Error handling Isn't All About Errors](https://www.youtube.com/watch?v=rAF8mLI0naQ)
+However, note that with boxed errors, we completely lose control flow.
+This is worse than it sounds: we can no longer test or fuzz error
+handling logic. Thus, the conversion from concrete to opaque should be
+intentional and only at the boundary where nothing else can be done.
 
-Panics are strictly for detecting incorrect code and should not be used
-for error handling. This pairs well with "Assert liberally" below as
-panics can be used to quickly detect bugs before they cause more harm.
+If you want control flow without losing the properties of `anyhow`,
+don't be afraid to make your own simple error type. Consider also the
+[`tracing-error`](https://github.com/tokio-rs/tracing/tree/master/tracing-error)
+crate.
+
+```rust
+pub struct MyError {
+    kind: MyErrorKind,
+    backtrace: std::backtrace::Backtrace,
+    span: tracing_error::SpanTrace,
+}
+```
+
+- [Modular Errors in Rust](https://sabrinajewson.org/blog/errors)
+- [Error Handling in a Correctness-Critical Rust Project](https://sled.rs/errors)
+- [Error Handling in Rust](https://www.lpalmieri.com/posts/error-handling-rust/#summary)
+
+Panics are strictly for detecting **incorrect code** or to signal
+**invariant violations** that are unrecoverable. This pairs well with
+"assert liberally" below as panics can be used to quickly detect bugs
+before they cause more harm and to ensure at runtime that invariants are
+maintained.
 
 ## Assert liberally
 
@@ -249,52 +301,6 @@ loop {
     }
 }
 ```
-
-## Observe everything
-
-Be thorough in observability. We want to be able to detect problems
-early and pin down the causes quickly. Our approach to observability
-is to use:
-
-- [`tracing`](https://docs.rs/tracing/latest/tracing/) for emitting
-  _events_ as structured logs.
-
-  ```rust
-  let result = execute(&action);
-
-  tracing::info!(
-      ?action,
-      ?result,
-      "executed",
-  );
-  ```
-
-  Some events may be part of a _trace_ which is a sequence of events.
-  Traces are great for capturing the flow of an operation as it
-  traverses the system. Take the time to familiarize yourself with how
-  the crate works.
-
-- [`metrics`](https://docs.rs/metrics/latest/metrics/) for capturing
-  measurements of the system and counters for events that would be
-  much too repetitive as events.
-
-  ```rust
-  let exec_time = metrics::histogram!("exec_time");
-
-  loop {
-      let action = rx.recv()?;
-      let t = Instant::now();
-      let result = execute(&action);
-      exec_time.record(t.elapsed().as_secs_f64());
-  }
-  ```
-
-Both of these crates provide minimal and simple frontends with pluggable
-backends, making them great for use in libraries. Strongly recommend
-reading the following articles to fully understand the model:
-
-- [All you need is Wide Events, not "Metrics, Logs and
-  Traces"](https://isburmistrov.substack.com/p/all-you-need-is-wide-events-not-metrics)
 
 ## Always statically link
 

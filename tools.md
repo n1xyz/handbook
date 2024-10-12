@@ -62,7 +62,8 @@ These are some extra tools that we use for convenience.
 - [direnv](https://direnv.net/)
   - Isn't strictly necessary, but is convenient for development.
   - Suggested to use with `use flake` so that the dev dependencies are
-    automatically loaded when entering the repo directory.
+    automatically loaded when entering the repo directory, along with
+    [nix-direnv](git@github.com:nix-community/nix-direnv.git).
 
 - [editorconfig](https://editorconfig.org/)
   - Primarily used to deal with editors that use non-UNIX line endings.
@@ -208,14 +209,6 @@ project.
 - Any scripting language other than Python, such Ruby or Perl. Not
   because they're bad, but because supporting multiple languages
   leads to a scattered codebase.
-
-- OpenTelemetry. Overall riddled with accidental complexity, Java-isms,
-  and is unergonomic with Rust. We prefer to model our observability as
-  a slight variation of ["wide
-  events"](https://isburmistrov.substack.com/p/all-you-need-is-wide-events-not-metrics).
-  Essentially, we use `tracing` to emit structured events, some of which
-  are part of a trace. Metrics are emitted separately as they may be
-  more frequent.
 
 - `pre-commit` and `husky`, or generally any tool that is trivially
   reconstructible with `nix` or `just`. These add additional learning
