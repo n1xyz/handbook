@@ -147,32 +147,20 @@ In Rust, errors typically have one of two functions:
 Control flow works when a function has a well-defined error set, which
 the caller can choose to handle however they wish. This is typically
 done with a `struct` with a `kind` field, or an `enum`. For a complete
-coverage, I suggest reviewing "Modular Errors in Rust" article below
+coverage, I suggest reviewing "Modular Errors in Rust" article below.
 
-For error reporting, it's best to have an opaque, boxed type. The
-obvious approach is `Box<dyn Error>`, but `anyhow` or `eyre` should be
-used as they are more ergonomic and, more importantly, provide a
-backtrace. `RUST_LIB_BACKTRACE=1` should _always_ be set so that
-backtraces are captured when using `anyhow` or `eyre`. For a more
-complete coverage, see the latter two articles.
+In terms of crates, the recommended approach is using
+[`snafu`](https://docs.rs/snafu/latest/snafu/). We've found it's a much
+better experience than `anyhow` or `thiserror` since every layer of the
+stack can add relevant context. You can use their `Whatever` type for
+top-level errors, with specific error types for the rest of the code.
+`RUST_LIB_BACKTRACE=1` should _always_ be set so that backtraces are
+captured.
 
-However, note that with boxed errors, we completely lose control flow.
-This is worse than it sounds: we can no longer test or fuzz error
-handling logic. Thus, the conversion from concrete to opaque should be
-intentional and only at the boundary where nothing else can be done.
-
-If you want control flow without losing the properties of `anyhow`,
-don't be afraid to make your own simple error type. Consider also the
-[`tracing-error`](https://github.com/tokio-rs/tracing/tree/master/tracing-error)
-crate.
-
-```rust
-pub struct MyError {
-    kind: MyErrorKind,
-    backtrace: std::backtrace::Backtrace,
-    span: tracing_error::SpanTrace,
-}
-```
+It's important that internal errors are typed, so we can test or fuzz
+the error handling logic. Thus, the conversion from concrete to opaque
+should be intentional and only at the boundary where nothing else can be
+done.
 
 - [Modular Errors in Rust](https://sabrinajewson.org/blog/errors)
 - [Error Handling in a Correctness-Critical Rust Project](https://sled.rs/errors)
@@ -196,12 +184,10 @@ asserts are incredible. I'll give some examples to illustrate. These are
 all based from code we've written, and many of these have actually
 caught bugs.
 
-This holds for both infrastructure and smart contract code, as Solidity
-also differentiates between "reverts", which are for external facing
-errors, and "panics", which indicate that an internal invariant has been
-violated. Asserts can come in a variety of forms, not just `assert!` but
-also `.unwrap()`, `.expect()`, `unreachable!()` or simply checking
-conditions and panicking if they don't hold
+This holds for both infrastructure and smart contract code. Asserts can
+come in a variety of forms, not just `assert!` but also `.unwrap()`,
+`.expect()`, `unreachable!()` or simply checking conditions and
+panicking if they don't hold
 
 - [LLVM coding standards: "Assert Liberally"](https://llvm.org/docs/CodingStandards.html#assert-liberally)
 - [It takes two to contract](https://tigerbeetle.com/blog/2023-12-27-it-takes-two-to-contract)
