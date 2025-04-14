@@ -16,7 +16,7 @@
     };
 
     layern = {
-      url = "github:Layer-N/layern.nix";
+      url = "github:n1xyz/n1.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

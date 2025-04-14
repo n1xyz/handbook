@@ -25,9 +25,6 @@ so as to avoid creating a barrier to entry for new engineers.
 - [TypeScript](https://www.typescriptlang.org/) is used for frontend work,
   preferred over JavaScript.
 
-- [Solidity](https://docs.soliditylang.org/) is used for smart contracts
-  developed against the Ethereum Virtual Machine.
-
 - [Nix](https://nix.dev/) is used for managing development environments,
   tooling, and provisioning software during deployments.
 
@@ -36,28 +33,17 @@ so as to avoid creating a barrier to entry for new engineers.
   though LaTeX math syntax is alright for use in markdown files.
 
 Any form of shell scripting is forbidden, as writing correct shell
-scripts requires significant tacit knowledge. Instead, we suggest using
-`just` for small scripts and encapsulating more complex logic in Rust or
-[forge
-scripts](https://book.getfoundry.sh/reference/forge/forge-script).
-Python may be used in a limited fashion for exploratory work and domain
-modelling, but should not touch anything production-related nor be used
-for automation.
+scripts is too subtle. Instead, we suggest using nix derivations for
+small scripts and encapsulating more complex logic in Rust. Python may
+be used in a limited fashion for exploratory work and domain modelling,
+but should not touch anything production-related nor be used for
+automation.
 
 ## Tools
 
 ### Miscellaneous
 
 These are some extra tools that we use for convenience.
-
-- [just](https://github.com/casey/just)
-  - This is the only tool we use for running scripts.
-  - For example, you could use `just build-static-release` with the
-    following `justfile`:
-    ```
-    build-static-release:
-        RUSTFLAGS="-C target-feature=+crt-static" cargo zigbuild --release --target x86_64-unknown-linux-musl
-    ```
 
 - [direnv](https://direnv.net/)
   - Isn't strictly necessary, but is convenient for development.
@@ -72,13 +58,18 @@ These are some extra tools that we use for convenience.
 
 ### Continuous Integration
 
-We use GitHub Actions for CI. Alternatives are being considered though
-as GitHub Actions doesn't support `aarch64-linux`.
+We use GitHub Actions for CI.
 
 ### Nix
 
 We use nix to install development dependencies and manage development
-environments. Nix is infamous for being difficult to learn as resources
+environments. If your distro provides a nix package, use that.
+Otherwise, we suggest using the [Determinate Nix
+Installer](https://determinate.systems/posts/determinate-nix-installer/).
+We recommend disabling "Determinate Nix" during the installation to not
+inherit their specialized nix, though it's not a huge deal.
+
+Nix is infamous for being difficult to learn as resources
 are scarce. I recommend going through these, in order:
 
 1. [Zero to Nix](https://zero-to-nix.com/) covers getting started and
@@ -103,23 +94,20 @@ Claude is great at writing nix.
 
 In terms of specific tooling:
 
-- [`layern.nix`](https://github.com/Layer-N/layern.nix) is our flake for
+- [`n1.nix`](https://github.com/n1xyz/n1.nix) is our flake for
   packaging tools that are not yet in nixpkgs or don't have builds for
   our supported platforms.
 - [`nixfmt-rfc-style`](https://github.com/NixOS/nixfmt) is used as the
   formatter. Your editor should be configured to use it.
 - [`flake-parts`](https://github.com/hercules-ci/flake-parts) should be
-  used instead of `flake-utils` as the former is more idiomatic.
+  used instead of `flake-utils` as the former is more idiomatic and we
+  make use of flake modules.
 - [`crane`](https://crane.dev/) may be used to create derivations of
   Rust if needed, such as for deployments, though is generally not
   recommended for development as `Cargo.lock` and `rust-toolchain.toml`
   provide enough reproducibility.
 - [`nixos-generators`](https://github.com/nix-community/nixos-generators)
   is used to generate NixOS images to test locally and for deployments.
-
-Nix should not be used to create small convenience scripts, as that
-causes litter to build up. Instead, opt for `just` or write scripts in
-appropriate languages.
 
 See our starter [flake.nix](flake.nix) for a complete example.
 
@@ -177,23 +165,6 @@ recommend:
 [`eslint`](https://eslint.org/) may be used, though we don't enforce it
 as it has quite a few false positives and overly strict defaults,
 generally seems to be aimed at novices.
-
-### Solidity
-
-All smart contracts targetting the Ethereum Virtual Machine should be
-written in Solidity. In terms of tooling, we use:
-
-- [`foundry`](https://book.getfoundry.sh/) suite for most things,
-  including
-  - `forge` for compiling, testing, deploying, formatting.
-  - `anvil` as the local development chain.
-  - `cast` for interacting with local and remote chains.
-  - `chisel` for inspecting chain state and as a nice debugger and repl.
-
-For scripting anything involving Ethereum, [`forge
-script`](https://book.getfoundry.sh/tutorials/solidity-scripting) should
-be used. This includes, for example, deploying contracts, calling
-functions, performance upgrades, etc.
 
 ### Terraform
 
