@@ -157,8 +157,6 @@ in changing the defaults. Prefer ES modules. In terms of tooling, we
 recommend:
 
 - [`bun`](https://bun.sh/) for development.
-- [`npm`](https://www.npmjs.com/) for `npm publish` as `bun` doesn't
-  support publishing yet.
 - [`prettier`](https://prettier.io/) for formatting, with default
   settings. Ensure your editor is configured appropriately.
 
