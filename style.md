@@ -174,7 +174,7 @@ maintained.
 
 ## Assert liberally
 
-Use `assert!` and `debug_assert!` as much as possible. While errors are
+Use `assert!(.., "..")` and `debug_assert!(.., " ")` as much as possible. While errors are
 for external consumption, asserts are used to enforce that _internal
 invariants_ are maintained. This might seem useless, but in practice is
 incredibly powerful for debugging and enforcing correctness. Often, code
@@ -185,8 +185,8 @@ all based from code we've written, and many of these have actually
 caught bugs.
 
 This holds for both infrastructure and smart contract code. Asserts can
-come in a variety of forms, not just `assert!` but also `.unwrap()`,
-`.expect()`, `unreachable!()` or simply checking conditions and
+come in a variety of forms, not just `assert!(..., " ")` but also
+`.expect(..., " ")`, `unreachable!(..., " ")` or simply checking conditions and
 panicking if they don't hold
 
 - [LLVM coding standards: "Assert Liberally"](https://llvm.org/docs/CodingStandards.html#assert-liberally)
