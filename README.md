@@ -8,3 +8,4 @@ back to it.
 1. [Tools we use](tools.md)
 2. [Our style guide](style.md)
 3. [Observability](o11y.md)
+4. [AI usage guide](ai.md)
